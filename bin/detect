@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+# bin/detect <build-dir>
+#   See: https://devcenter.heroku.com/articles/buildpack-api#bin-detect
+
+echo 'spiped'
+exit 0

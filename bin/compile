@@ -1,0 +1,102 @@
+#!/usr/bin/env bash
+set -e
+
+# bin/compile <build-dir> <cache-dir> <env-dir>
+#   See: https://devcenter.heroku.com/articles/buildpack-api#bin-compile
+
+# debug
+# set -x
+
+# Clean up leaking environment
+unset GIT_DIR
+
+# Parse script parameters
+BUILD_DIR=$1
+CACHE_DIR=$2
+# ENV_DIR=$3
+BUILDPACK_DIR="$(dirname $(readlink -f $(dirname $0)))"
+
+SPIPED_VERSION="1.6.0"
+SPIPED_SHA="e6f7f8f912172c3ad55638af8346ae7c4ecaa92aed6d3fb60f2bda4359cba1e4"
+SPIPED_PROFILE=$BUILD_DIR/.profile.d/spiped.sh
+SPIPED_CACHE_DIR=$CACHE_DIR/$STACK/$SPIPED_VERSION
+SPIPED_VENDOR_DIR=$BUILD_DIR/vendor/spiped
+
+# install_profile creates a profile.d file that adds the vendored spiped
+# directory to the PATH.
+install_profile() {
+  mkdir -p $(dirname $SPIPED_PROFILE)
+  echo 'export PATH="$PATH:/app/vendor/spiped"' > $SPIPED_PROFILE
+}
+
+mkdir -p $SPIPED_VENDOR_DIR
+
+# Check for an existing copy in the cache and install that if one exists for
+# the current stack and version.
+if [[ -d $SPIPED_CACHE_DIR ]]; then
+  echo "       Vendoring cached spiped version: $SPIPED_VERSION"
+
+  # Copy the cached build artifacts to /vendor
+  cp -r $SPIPED_CACHE_DIR -t $SPIPED_VENDOR_DIR
+  install_profile
+
+  echo "-----> spiped done"
+  exit 0
+fi
+
+# Compile spiped
+echo "       Installing spiped version: $SPIPED_VERSION"
+
+## Use a temporary directory for compilation
+build=$(mktemp -d)
+cd $build
+
+# Disable exit on command failure so we can provide better error messages
+set +e
+
+# Download the source for compilation
+url="https://www.tarsnap.com/spiped/spiped-$SPIPED_VERSION.tgz"
+wget -q $url
+
+retVal=$?
+if [[ $retVal -ne 0 ]]; then
+  echo "-----> spiped error: Failed to download source from $url"
+  exit $retVal
+fi
+
+## Verify the checksum for the downloaded file against the published sha.
+echo "$SPIPED_SHA  spiped-$SPIPED_VERSION.tgz" | shasum --status -a 256 -c -
+
+retVal=$?
+if [[ $retVal -ne 0 ]]; then
+  echo "-----> spiped error: Downloaded source failed checksum"
+  exit $retVal
+fi
+
+mkdir $build/spiped
+tar -C $build/spiped -xz --strip-components=1 -f spiped-$SPIPED_VERSION.tgz
+cd $build/spiped
+
+# Compile and install spipe and spiped to /app/vendor/spiped
+BINDIR=$SPIPED_VENDOR_DIR make install > $build/build.log 2>&1 
+
+retVal=$?
+if [[ $retVal -ne 0 ]]; then
+  echo "-----> spiped error: Compilation failed"
+  cat $build/build.log
+  exit $retVal
+fi
+
+# Reenable exit on failed command
+set -e
+
+# Copy start-spiped scripts so it's useable.
+cp $BUILDPACK_DIR/bin/start-spiped $SPIPED_VENDOR_DIR/start-spiped
+
+# Cache the build artifacts
+mkdir -p $SPIPED_CACHE_DIR
+cp -r $SPIPED_VENDOR_DIR -t $SPIPED_CACHE_DIR
+install_profile
+
+echo "-----> spiped done"
+exit 0
