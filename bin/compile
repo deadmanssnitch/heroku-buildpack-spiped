@@ -37,7 +37,7 @@ if [[ -d $SPIPED_CACHE_DIR ]]; then
   echo "       Vendoring cached spiped version: $SPIPED_VERSION"
 
   # Copy the cached build artifacts to /vendor
-  cp -r $SPIPED_CACHE_DIR -t $SPIPED_VENDOR_DIR
+  cp -r $SPIPED_CACHE_DIR -T $SPIPED_VENDOR_DIR
   install_profile
 
   echo "-----> spiped done"
@@ -95,7 +95,7 @@ cp $BUILDPACK_DIR/bin/start-spiped $SPIPED_VENDOR_DIR/start-spiped
 
 # Cache the build artifacts
 mkdir -p $SPIPED_CACHE_DIR
-cp -r $SPIPED_VENDOR_DIR -t $SPIPED_CACHE_DIR
+cp -r $SPIPED_VENDOR_DIR -T $SPIPED_CACHE_DIR
 install_profile
 
 echo "-----> spiped done"
