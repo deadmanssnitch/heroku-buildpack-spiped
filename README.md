@@ -30,7 +30,7 @@ Get started for free today with [Dead Man's Snitch on Heroku](https://elements.h
 ## Install
 
 ```console
-heroku buildpacks:add --index 1 https://github.com/deadmanssnitch/heroku-buildpack-jemalloc.git
+heroku buildpacks:add https://github.com/deadmanssnitch/heroku-buildpack-spiped
 git push heroku master
 ```
 
