@@ -9,11 +9,6 @@ Common uses include:
 - [Securing Redis communication](https://redis.io/topics/encryption)
 - Statsd over TCP
 
-## Status :warning: :rotating_light:
-
-This buildpack is in early development and (while it may work) the environment
-variables and usage may change and break your application.
-
 ## Thanks
 
 The development and continued support for this buildpack is sponsored by 
@@ -72,7 +67,7 @@ Address to which spiped should connect.  Must be in one of the following formats
 
 ### SPIPED_SOURCE
 
-Address  on  which  spiped should listen for incoming connections.
+Address on which spiped should listen for incoming connections.
 
 * `/absolute/path/to/unix/socket`
 * `host.name:port`
